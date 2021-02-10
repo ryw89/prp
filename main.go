@@ -3,6 +3,8 @@ package main
 import (
 	"errors"
 	"github.com/BurntSushi/toml"
+	"github.com/justinas/alice"
+	"github.com/pkg4go/httprange"
 	"io"
 	"log"
 	"net"
@@ -123,13 +125,15 @@ func main() {
 	conf, err = parseConfig(confPath)
 	if err != nil {
 		panic(err)
+
 	}
+
 	// Run server
-	http.HandleFunc("/", serveReverseProxy)
+	var chain = alice.New(httprange.New()).Then(http.HandlerFunc(serveReverseProxy))
 
 	port := ":" + strconv.Itoa(conf.Port)
 	log.Printf("Starting server on %s\n", port)
-	if err := http.ListenAndServe(port, nil); err != nil {
+	if err := http.ListenAndServe(port, chain); err != nil {
 		panic(err)
 	}
 }
